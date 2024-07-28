@@ -1,74 +1,77 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import yfinance as yf
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Title of the Streamlit app
-st.title('Portfolio Analysis Tool')
+st.title('Sustainable Living Tips')
 
-# Sidebar inputs for user to input their portfolio holdings
-st.sidebar.header('Input Portfolio Holdings')
+# Sidebar for navigation
+st.sidebar.title('Navigation')
+page = st.sidebar.radio('Go to', ['Home', 'Track Progress', 'Visualize Progress'])
 
-# Example ticker and allocation
-example_tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN']
-example_allocations = [0.25, 0.25, 0.25, 0.25]
+# Sustainable living tips
+tips = [
+    "Reduce, Reuse, Recycle",
+    "Use energy-efficient appliances",
+    "Reduce water usage",
+    "Use public transportation or carpool",
+    "Eat more plant-based meals",
+    "Reduce single-use plastics",
+    "Compost organic waste",
+    "Support renewable energy sources",
+    "Buy locally produced goods",
+    "Plant a tree or start a garden"
+]
 
-# Input for tickers
-tickers = st.sidebar.text_area('Tickers (comma separated)', ', '.join(example_tickers))
-tickers = [ticker.strip().upper() for ticker in tickers.split(',')]
+# Home Page
+if page == 'Home':
+    st.header('Welcome to Sustainable Living Tips')
+    st.write('Here are some tips to help you live a more sustainable lifestyle:')
+    for tip in tips:
+        st.write(f"- {tip}")
 
-# Input for allocations
-allocations = st.sidebar.text_area('Allocations (comma separated, in decimals)', ', '.join(map(str, example_allocations)))
-allocations = [float(alloc) for alloc in allocations.split(',')]
+# Track Progress Page
+elif page == 'Track Progress':
+    st.header('Track Your Progress')
 
-# Validate the inputs
-if len(tickers) != len(allocations):
-    st.sidebar.error('The number of tickers must match the number of allocations.')
-elif sum(allocations) != 1:
-    st.sidebar.error('The sum of the allocations must be 1.')
-else:
-    # Fetch historical price data
-    data = yf.download(tickers, start='2020-01-01')['Adj Close']
-    
-    if data.isnull().values.any():
-        st.error('Some tickers have missing data. Please check the ticker symbols or select a different date range.')
+    # Load or initialize progress data
+    if 'progress' not in st.session_state:
+        st.session_state.progress = pd.DataFrame(columns=['Tip', 'Date'])
+
+    # Input for tracking progress
+    tip = st.selectbox('Select a tip to track', tips)
+    date = st.date_input('Date')
+
+    # Button to add progress
+    if st.button('Add Progress'):
+        st.session_state.progress = st.session_state.progress.append({'Tip': tip, 'Date': date}, ignore_index=True)
+        st.success('Progress added!')
+
+    # Display progress
+    st.write('Your Progress:')
+    st.dataframe(st.session_state.progress)
+
+# Visualize Progress Page
+elif page == 'Visualize Progress':
+    st.header('Visualize Your Progress')
+
+    if 'progress' not in st.session_state or st.session_state.progress.empty:
+        st.write('No progress to visualize.')
     else:
-        # Calculate daily returns
-        returns = data.pct_change().dropna()
+        # Plot progress over time
+        progress = st.session_state.progress
+        progress['Count'] = 1
+        progress_over_time = progress.groupby(['Date', 'Tip']).count().unstack().fillna(0)
 
-        # Calculate portfolio returns and volatility
-        portfolio_return = np.dot(returns.mean(), allocations) * 252
-        portfolio_volatility = np.sqrt(np.dot(allocations, np.dot(returns.cov() * 252, allocations)))
-        
-        # Risk-free rate (for Sharpe Ratio calculation), assume 2% annual risk-free rate
-        risk_free_rate = 0.02
-        sharpe_ratio = (portfolio_return - risk_free_rate) / portfolio_volatility
+        st.write('Progress Over Time:')
+        st.line_chart(progress_over_time)
 
-        # Display portfolio metrics
-        st.header('Portfolio Metrics')
-        st.write(f"Expected Annual Return: {portfolio_return:.2%}")
-        st.write(f"Annual Volatility: {portfolio_volatility:.2%}")
-        st.write(f"Sharpe Ratio: {sharpe_ratio:.2f}")
-
-        # Plot portfolio allocation
-        st.header('Portfolio Allocation')
+        # Plot distribution of tips
+        st.write('Distribution of Tips:')
+        tip_distribution = progress['Tip'].value_counts()
         fig, ax = plt.subplots()
-        ax.pie(allocations, labels=tickers, autopct='%1.1f%%', startangle=90)
-        ax.axis('equal')
+        tip_distribution.plot(kind='bar', ax=ax)
+        plt.title('Distribution of Tips')
+        plt.xlabel('Tip')
+        plt.ylabel('Count')
         st.pyplot(fig)
-
-        # Display historical prices
-        st.header('Historical Prices')
-        st.line_chart(data)
-
-        # Calculate and display correlation matrix
-        st.header('Correlation Matrix')
-        correlation_matrix = returns.corr()
-        st.write(correlation_matrix)
-
-        # Display pair plots for returns
-        st.header('Pair Plot of Returns')
-        sns.pairplot(returns)
-        st.pyplot(plt)
