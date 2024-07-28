@@ -1,6 +1,1 @@
-streamlit 
-pandas 
-numpy 
-matplotlib 
-yfinance 
-seaborn
+pip install streamlit pandas matplotlib
