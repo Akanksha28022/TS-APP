@@ -1,77 +1,55 @@
 import streamlit as st
 import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 
-# Title of the Streamlit app
-st.title('Sustainable Living Tips')
+# Load data
+@st.cache
+def load_data():
+    data = pd.read_csv('your_dataset.csv')  # Replace with your dataset file
+    return data
 
-# Sidebar for navigation
-st.sidebar.title('Navigation')
-page = st.sidebar.radio('Go to', ['Home', 'Track Progress', 'Visualize Progress'])
+data = load_data()
 
-# Sustainable living tips
-tips = [
-    "Reduce, Reuse, Recycle",
-    "Use energy-efficient appliances",
-    "Reduce water usage",
-    "Use public transportation or carpool",
-    "Eat more plant-based meals",
-    "Reduce single-use plastics",
-    "Compost organic waste",
-    "Support renewable energy sources",
-    "Buy locally produced goods",
-    "Plant a tree or start a garden"
-]
+# Sidebar for user input
+st.sidebar.header('User Input Features')
+selected_feature = st.sidebar.selectbox('Feature', data.columns)
+selected_value = st.sidebar.slider('Value', float(data[selected_feature].min()), float(data[selected_feature].max()), float(data[selected_feature].mean()))
 
-# Home Page
-if page == 'Home':
-    st.header('Welcome to Sustainable Living Tips')
-    st.write('Here are some tips to help you live a more sustainable lifestyle:')
-    for tip in tips:
-        st.write(f"- {tip}")
+# Filter data based on user input
+filtered_data = data[data[selected_feature] <= selected_value]
 
-# Track Progress Page
-elif page == 'Track Progress':
-    st.header('Track Your Progress')
+# Main dashboard
+st.title('Data Dashboard')
 
-    # Load or initialize progress data
-    if 'progress' not in st.session_state:
-        st.session_state.progress = pd.DataFrame(columns=['Tip', 'Date'])
+st.write('## Dataset')
+st.write(data.head())
 
-    # Input for tracking progress
-    tip = st.selectbox('Select a tip to track', tips)
-    date = st.date_input('Date')
+st.write('## Filtered Data')
+st.write(filtered_data.head())
 
-    # Button to add progress
-    if st.button('Add Progress'):
-        st.session_state.progress = st.session_state.progress.append({'Tip': tip, 'Date': date}, ignore_index=True)
-        st.success('Progress added!')
+st.write('## Data Description')
+st.write(data.describe())
 
-    # Display progress
-    st.write('Your Progress:')
-    st.dataframe(st.session_state.progress)
+st.write('## Visualizations')
 
-# Visualize Progress Page
-elif page == 'Visualize Progress':
-    st.header('Visualize Your Progress')
+# Histogram
+st.write('### Histogram')
+fig, ax = plt.subplots()
+sns.histplot(filtered_data[selected_feature], bins=30, ax=ax)
+st.pyplot(fig)
 
-    if 'progress' not in st.session_state or st.session_state.progress.empty:
-        st.write('No progress to visualize.')
-    else:
-        # Plot progress over time
-        progress = st.session_state.progress
-        progress['Count'] = 1
-        progress_over_time = progress.groupby(['Date', 'Tip']).count().unstack().fillna(0)
+# Scatter plot
+st.write('### Scatter Plot')
+x_axis = st.sidebar.selectbox('X-axis', data.columns)
+y_axis = st.sidebar.selectbox('Y-axis', data.columns)
+fig, ax = plt.subplots()
+sns.scatterplot(x=data[x_axis], y=data[y_axis], ax=ax)
+st.pyplot(fig)
 
-        st.write('Progress Over Time:')
-        st.line_chart(progress_over_time)
-
-        # Plot distribution of tips
-        st.write('Distribution of Tips:')
-        tip_distribution = progress['Tip'].value_counts()
-        fig, ax = plt.subplots()
-        tip_distribution.plot(kind='bar', ax=ax)
-        plt.title('Distribution of Tips')
-        plt.xlabel('Tip')
-        plt.ylabel('Count')
-        st.pyplot(fig)
+# Line plot
+st.write('### Line Plot')
+time_series_feature = st.sidebar.selectbox('Time Series Feature', data.columns)
+fig, ax = plt.subplots()
+sns.lineplot(data=data, x=data.index, y=time_series_feature, ax=ax)
+st.pyplot(fig)
