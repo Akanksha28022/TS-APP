@@ -10,13 +10,13 @@ from sklearn.model_selection import train_test_split
 st.title('Stock Price Time Series Forecasting')
 
 # User inputs
-ticker = st.text_input('Enter stock ticker symbol', 'AAPL')
+ticker = st.text_input('Enter stock ticker symbol', 'BAJAJ-AUTO.NS')
 start_date = st.date_input('Start date', value=pd.to_datetime('2020-01-01'))
 end_date = st.date_input('End date', value=pd.to_datetime('today'))
 forecast_horizon = st.number_input('Enter forecast horizon (days)', min_value=1, value=30)
 
 # Fetch stock data
-data = yf.download(ticker, start=start_date, end=end_date)
+data = yf.download(BAJAJ-AUTO.NS, start=2020-01-01, end=2024-07-28)
 
 # Pre-process data
 data.reset_index(inplace=True)
