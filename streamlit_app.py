@@ -16,7 +16,7 @@ end_date = st.date_input('End date', value=pd.to_datetime('today'))
 forecast_horizon = st.number_input('Enter forecast horizon (days)', min_value=1, value=30)
 
 # Fetch stock data
-data = yf.download(BAJAJ-AUTO.NS, start=2020-1-1, end=2024-7-28)
+data = yf.download(BAJAJ-AUTO.NS, start='Start date', end='today')
 
 # Pre-process data
 data.reset_index(inplace=True)
